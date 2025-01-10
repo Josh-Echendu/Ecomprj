@@ -1,0 +1,54 @@
+def add_to_cart(request):
+
+    # This takes care of all the product we have got in the cart
+    cart_product = {}
+
+    # Get the current product id
+    cart_product[str(request.GET['id'])] = {
+        'title': request.GET['title'],
+        'qty': request.GET['qty'],
+        'price': request.GET['price'],
+        'pid': request.GET['pid'],
+        'image': request.GET['image']
+    }
+    print(cart_product) # {'2': {'title': 'Bananas', 'qty': '1', 'price': '5.00'}}
+
+    if 'cart_data_obj' in request.session: # cart_data_obj: This is the key in the session dictionary. It's a string that you've chosen to identify the cart data.
+        print('session', request.session.items()) # dict_items([('cart_data_obj', {'2': {'title': 'Bananas', 'qty': '1', 'price': '5.00'}})])
+        print('cart_obj', request.session['cart_data_obj']) # {'2': {'title': 'Bananas', 'qty': '1', 'price': '5.00'}}: This is the value associated with the cart_data_obj key.
+        #In essence, the 'cart_data_obj' is a container for the user's shopping cart. It stores information about each product in the cart, including its ID, title, quantity, and price.
+
+        if str(request.GET['id']) in request.session['cart_data_obj']: # we converted request.GET[id] to (str), bcos python dict values are in form of strings 
+            cart_data = request.session['cart_data_obj']
+            print('cart_data1', cart_data)
+
+            # This line of code is updating(i.e incrementing) the quantity(qty) of a product, that is already in the cart           
+            cart_data[str(request.GET['id'])]['qty'] = int(cart_product[str(request.GET['id'])]['qty'])
+            print('cart_data2', cart_data)
+
+            #cart_data[str(request.GET['id'])]['qty']: This accesses the qty (quantity) property of the product in the cart.
+            #int(cart_product[str(request.GET['id'])]['qty']): This calculates the new quantity. It retrieves the quantity(qty) from the cart_product dictionary (which contains information about the product being added) and converts it to an integer.
+
+            # update the cart session
+            cart_data.update(cart_data) # not compulsory
+            print('cart_data3', cart_data)
+
+            # is used to store the updated cart data in the user's session.
+            request.session['cart_data_obj'] = cart_data
+
+        else:
+            # This line retrieves the existing cart data from the user's session. 
+            cart_data = request.session['cart_data_obj']
+
+            # This line updates the cart_data dictionary with the new product information from the cart_product dictionary.
+            cart_data.update(cart_product)
+
+            # This line updates the session with the modified cart_data dictionary. This ensures that the updated cart information is persisted for the user's session.
+            request.session['cart_data_obj'] = cart_data
+    
+    else:
+
+        # This code block is executed when the user's session doesn't have a cart_data_obj yet i.e  It means the user has not added any products to their cart yet in this session. This typically happens when the user is visiting the website for the first time or has cleared their browser's cookies.        
+        request.session['cart_data_obj'] = cart_product # The current product being added is assigned to the cart_data_obj in the session. This initializes the user's cart with the first product.
+    
+    return JsonResponse({'data': request.session['cart_data_obj'], 'totalCartitems': len(request.session['cart_data_obj'])})
